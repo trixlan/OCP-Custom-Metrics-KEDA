@@ -44,17 +44,3 @@ spec:
     targetPort: 8080
   selector:
     type: keda-testing
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  labels:
-  name: keda-testing-sm
-spec:
-  endpoints:
-  - scheme: http
-    port: http
-  namespaceSelector: {}
-  selector:
-    matchLabels:
-       app: test-app

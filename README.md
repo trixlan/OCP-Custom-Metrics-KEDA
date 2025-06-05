@@ -13,19 +13,25 @@ Prometheus KEDA scaler is being used for this setup, for details please refer to
 
 ---
 
-## 0. Install KEDA and enable OpenShift monitoring for user-defined projects
+## 0. Install KEDA and enable OpenShift monitoring for user-defined projects (This part must be executed by cluster-admin)
  1. In `OperatorHub` locate and install Custom Metrics Autoscaler
 ![CMA](images/cma.png "Custome Metrics Autoscaler")
  1. In Custom Metrics Autoscaler install KedaController in openshift-keda project with keda name
 ![KedaController](images/keda-controller.png "KedaController")
  1. Verify keda pods
+```bash
+oc -n openshift-keda get pods
+```
 ![KedaPods](images/keda-pods.png "KedaPods")
  1. Be sure to enable OpenShift monitoring for user-defined projects. Please refer to the [documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/monitoring/configuring-user-workload-monitoring#enabling-monitoring-for-user-defined-projects-uwm_preparing-to-configure-the-monitoring-stack-uwm), or you can create following ConfigMap to do so:
     ```bash
     oc apply -f configmap.yaml
     ```
 
- 1. Be sure enableUserWorkload: true
+ 2. Be sure enableUserWorkload: true
+```bash
+oc -n openshift-monitoring describe configmap cluster-monitoring-config
+```
 ![ConfigMap](images/configmap.png "ConfigMap")
 
 ## 1. Deploy application that exposes Prometheus metrics
@@ -40,6 +46,14 @@ oc logs deployment.apps/test-app
 You should see similar output:
 ```
 2022/02/09 16:31:59 Server started on port 8080
+```
+Following command deploy `ServiceMonitor` ***(Execution might require cluster-admin permissions.)***:
+```bash
+oc apply -f servicemonitor.yaml
+```
+Verify the servicemonitor is correctly deployed:
+```bash
+oc get servicemonitor
 ```
 
 ## 2. Create a Service Account or reuse existing one, locate assigned token
