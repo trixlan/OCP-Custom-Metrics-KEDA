@@ -127,7 +127,7 @@ Replace `<NAMESPACE>` in URL in [load.yaml](load.yaml) file. Then create this Ku
 ```bash
 oc create -f load.yaml
 ```
-You should see created an increased nubmer replicas of the test Consumer application until all sent requests are processed. And the the application will be again autoscaled down to one replica. You can check the changing number of replicas by running the following command:
+You should see created an increased number replicas of the test Consumer application until all sent requests are processed. And the the application will be again autoscaled down to one replica. You can check the changing number of replicas by running the following command:
 ```bash
 watch oc get deployment.apps/test-app
 ```
@@ -146,14 +146,70 @@ NAME       READY   UP-TO-DATE   AVAILABLE   AGE
 test-app   1/1     1            1           10m
 ```
 
-## 8. Clean up
+## 8. Deploy NodeJs application & ServiceMonitoring 
+Deploy Application in the Web Console Developer - +Add - Import from Git
+![Deploy NodeJs](images/deploy-nodejs01.png "Deploy NodeJs")
+![Deploy NodeJs](images/deploy-nodejs02.png "Deploy NodeJs")
+![Deploy NodeJs](images/deploy-nodejs03.png "Deploy NodeJs")
+
+Following command deploy `ServiceMonitor` ***(Execution might require cluster-admin permissions.)***. Verify the service port name by defaul is 3000-http:
+```bash
+oc apply -f servicemonitor-nodejs.yaml
+```
+Verify the servicemonitor is correctly deployed:
+```bash
+oc get servicemonitor
+```
+
+## 9. Deploy ScaledObject to enable application autoscaling
+Replace `<NAMESPACE>` property in [scaledobject-nodejs.yaml](scaledobject-nodejs.yaml) file with the namespace where is deployed our application. And deploy this resource:
+```bash
+oc apply -f scaledobject-nodejs.yaml
+```
+Check that KEDA has been able to access metrics and is correctly defined for autoscaling:
+```bash
+oc get scaledobject prometheus-scaledobject 
+```
+You should see similar output, `READY` should be `True`:
+```bash
+NAME                      SCALETARGETKIND      SCALETARGETNAME   MIN   MAX   TRIGGERS     AUTHENTICATION                 READY   ACTIVE   FALLBACK   AGE
+prometheus-scaledobject-nodejs   apps/v1.Deployment   test-app          1     10    prometheus   keda-trigger-auth-prometheus   True    False    False      1m41s
+```
+
+## 10. Generate requests to test the application autoscaling
+Replace `<NAMESPACE>` and `<PORT>` in URL in [load-nodejs.yaml](load-nodejs.yaml) file. Then create this Kubernetes Job with the following command:
+```bash
+oc create -f load-nodejs.yaml
+```
+You should see created an increased number replicas of the test Consumer application until all sent requests are processed. And the the application will be again autoscaled down to one replica. You can check the changing number of replicas by running the following command:
+```bash
+watch oc get deployment.apps/prometheus
+```
+
+The output should be similar:
+```bash
+Every 2,0s: oc get deployment.apps/prometheus
+
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+prometheus   10/10   10           10          3m17s
+
+### After some time the application should be autoscaled back to 1
+
+Every 2,0s: oc get deployment.apps/prometheus
+NAME       READY   UP-TO-DATE   AVAILABLE   AGE
+prometheus   1/1     1            1           10m
+```
+
+## 11. Clean up
 Run the following commands to remove all resources created in the namespace
 ```bash
 oc delete jobs --field-selector status.successful=1 
 oc delete -f triggerauthentication.yaml
 oc delete -f scaledobject.yaml
+oc delete -f scaledobject-nodejs.yaml
 oc delete -f deployment.yaml
 oc delete -f servicemonitor.yaml
+oc delete -f servicemonitor-nodejs.yaml
 oc delete -f secret.yaml
 oc delete -f rolebinding.yaml
 oc delete -f role.yaml

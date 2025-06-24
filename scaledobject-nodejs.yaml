@@ -1,0 +1,22 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: prometheus-scaledobject-nodejs
+spec:
+  scaleTargetRef:
+    name: prometheus
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 5
+  cooldownPeriod:  10
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: https://thanos-querier.openshift-monitoring.svc.cluster.local:9092
+      namespace: buro                         # replace <NAMESPACE>
+      metricName: my_custom_counter
+      threshold: '5'
+      query: sum(rate(my_custom_counter{job="prometheus"}[1m]))
+      authModes: "bearer"
+    authenticationRef:
+      name: keda-trigger-auth-prometheus
