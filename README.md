@@ -153,6 +153,7 @@ Deploy Application in the Web Console Developer - +Add - Import from Git
 ![Deploy NodeJs](images/deploy-nodejs03.png "Deploy NodeJs")
 
 Following command deploy `ServiceMonitor` ***(Execution might require cluster-admin permissions.)***. Verify the service port name by defaul is 3000-http:
+![Service NodeJs](images/service-prometheus.png "Service NodeJs")
 ```bash
 oc apply -f servicemonitor-nodejs.yaml
 ```
